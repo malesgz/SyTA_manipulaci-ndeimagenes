@@ -1,1 +1,1 @@
-﻿# SyTA_manipulaciondeimagenes
+﻿# SyTA_manipulacion_de_imagenes
