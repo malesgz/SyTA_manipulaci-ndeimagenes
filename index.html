@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Procesamiento de Imágenes con TensorFlow.js</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <style>
+      img {
+        margin: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Procesamiento de Imágenes con TensorFlow.js</h1>
+
+    <input type="file" id="upload" accept="image/*" />
+
+    <h2>Imagen Original</h2>
+    <img id="original" alt="Imagen Original" width="256" />
+
+    <h2>Imagen Recortada y Redimensionada</h2>
+    <img id="cropped" alt="Imagen Recortada" width="256" />
+
+    <h2>Imagen Redimensionada con Bilinear</h2>
+    <img id="resized1" alt="Imagen Redimensionada Bilinear" width="128" />
+
+    <h2>Imagen Redimensionada con Nearest Neighbor</h2>
+    <img
+      id="resized2"
+      alt="Imagen Redimensionada Nearest Neighbor"
+      width="128"
+    />
+
+    <h2>Imagen Redimensionada y Espejada</h2>
+    <img id="flipped" alt="Imagen Espejada" width="128" />
+
+    <script>
+      document
+        .getElementById("upload")
+        .addEventListener("change", handleImageUpload);
+
+      async function handleImageUpload(event) {
+        const file = event.target.files[0];
+        const reader = new FileReader();
+
+        reader.onload = async function (e) {
+          const img = new Image();
+          img.src = e.target.result;
+          img.onload = async function () {
+            const tensor = tf.browser.fromPixels(img);
+
+            // Mostrar imagen original
+            document.getElementById("original").src = img.src;
+
+            // Recortar la imagen
+            const cropped = tf.image
+              .cropAndResize(
+                tf.expandDims(tensor),
+                [[0.25, 0.25, 0.75, 0.75]],
+                [0],
+                [256, 256]
+              )
+              .squeeze();
+            await tf.browser
+              .toPixels(cropped, document.createElement("canvas"))
+              .then((canvas) => {
+                document.getElementById("cropped").src = canvas.toDataURL();
+              });
+
+            // Redimensionar la imagen usando Bilinear
+            const resized1 = tf.image.resizeBilinear(tensor, [128, 128]);
+            await tf.browser
+              .toPixels(resized1, document.createElement("canvas"))
+              .then((canvas) => {
+                document.getElementById("resized1").src = canvas.toDataURL();
+              });
+
+            // Redimensionar la imagen usando Nearest Neighbor
+            const resized2 = tf.image.resizeNearestNeighbor(tensor, [128, 128]);
+            await tf.browser
+              .toPixels(resized2, document.createElement("canvas"))
+              .then((canvas) => {
+                document.getElementById("resized2").src = canvas.toDataURL();
+              });
+
+            // Espejar la imagen
+            const flipped = tf.image.flipLeftRight(resized1);
+            await tf.browser
+              .toPixels(flipped, document.createElement("canvas"))
+              .then((canvas) => {
+                document.getElementById("flipped").src = canvas.toDataURL();
+              });
+
+            // Liberar memoria
+            tensor.dispose();
+            cropped.dispose();
+            resized1.dispose();
+            resized2.dispose();
+            flipped.dispose();
+          };
+        };
+        reader.readAsDataURL(file);
+      }
+    </script>
+  </body>
+</html>
